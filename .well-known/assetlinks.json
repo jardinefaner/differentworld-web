@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jardine.differentworld",
+      "sha256_cert_fingerprints": [
+        "EC:2E:DF:60:E0:F7:EF:E1:AC:63:42:09:E9:4F:2B:B0:37:62:08:E1:71:6E:52:50:53:AC:94:44:4D:D4:08:D7"
+      ]
+    }
+  }
+]

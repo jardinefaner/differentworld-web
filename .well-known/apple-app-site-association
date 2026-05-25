@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TODO_APPLE_TEAM_ID.com.jardine.differentworld",
+        "paths": [
+          "/v/*",
+          "/invite/*"
+        ]
+      }
+    ]
+  }
+}

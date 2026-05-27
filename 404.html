@@ -109,11 +109,17 @@
     }
     /* Section toggle — JS swaps `data-mode` on <body> */
     body[data-mode="loading"] .vehicle,
+    body[data-mode="loading"] .invite,
     body[data-mode="loading"] .not-found { display: none; }
     body[data-mode="vehicle"] .loading,
+    body[data-mode="vehicle"] .invite,
     body[data-mode="vehicle"] .not-found { display: none; }
+    body[data-mode="invite"] .loading,
+    body[data-mode="invite"] .vehicle,
+    body[data-mode="invite"] .not-found { display: none; }
     body[data-mode="not-found"] .loading,
-    body[data-mode="not-found"] .vehicle { display: none; }
+    body[data-mode="not-found"] .vehicle,
+    body[data-mode="not-found"] .invite { display: none; }
   </style>
 </head>
 <body data-mode="loading">
@@ -139,6 +145,22 @@
     <div class="meta" id="meta-line"></div>
   </div>
 
+  <div class="card invite">
+    <div class="glyph">✉️</div>
+    <h1>Join a Different World program</h1>
+    <p>
+      Someone invited you to their program. If you have the
+      Different World app, tap below to accept.
+    </p>
+    <p>
+      If you don't have the app yet, ask the person who invited you
+      for the download link, then come back and tap this URL again.
+    </p>
+    <a id="open-invite" class="btn" href="#">Open in app</a>
+    <a class="btn outline" href="/">About Different World</a>
+    <div class="meta" id="invite-meta-line"></div>
+  </div>
+
   <div class="card not-found">
     <div class="glyph">🤷</div>
     <h1>Page not found</h1>
@@ -149,33 +171,48 @@
   <script>
     (function () {
       var path = window.location.pathname || '';
-      // Match `/v/<id>/<kind>` — the vehicle deep link path. Allow
-      // optional trailing slash. `<kind>` is whitelisted (checkout /
-      // checkin) so malformed inputs fall through to not-found.
-      var m = path.match(/^\/v\/([^\/]+)\/(checkout|checkin)\/?$/i);
-      if (m) {
-        var id = m[1];
-        var kind = m[2].toLowerCase();
-        var customSchemeUrl = 'differentworld://v/' + id + '/' + kind;
-        // Try the custom scheme. On iOS Safari this triggers a banner.
-        // On Android Chrome it opens the app (if installed) or shows a
-        // chooser. We don't *navigate* the page — we set a hidden
-        // iframe src so that if the app isn't installed, the parent
-        // page stays on screen with the fallback UI.
+
+      // Shared helper — fires the custom scheme via a hidden iframe so
+      // the parent page stays on screen if the app isn't installed.
+      function tryDeepLink(customSchemeUrl) {
         var iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = customSchemeUrl;
         document.body.appendChild(iframe);
+      }
 
-        // After a short hop, reveal the "Tap to open" card so the
-        // user has an explicit way to retry. iOS in particular often
-        // suppresses the auto-redirect on first interaction.
+      // /v/<id>/<kind> — vehicle deep link. `<kind>` is whitelisted
+      // (checkout / checkin) so malformed inputs fall through to
+      // not-found.
+      var vm = path.match(/^\/v\/([^\/]+)\/(checkout|checkin)\/?$/i);
+      if (vm) {
+        var id = vm[1];
+        var kind = vm[2].toLowerCase();
+        var customSchemeUrl = 'differentworld://v/' + id + '/' + kind;
+        tryDeepLink(customSchemeUrl);
         setTimeout(function () {
           document.body.setAttribute('data-mode', 'vehicle');
-          var anchor = document.getElementById('open-app');
-          anchor.href = customSchemeUrl;
+          document.getElementById('open-app').href = customSchemeUrl;
           document.getElementById('meta-line').textContent =
             'Vehicle ' + id.slice(0, 8) + ' · ' + kind;
+        }, 700);
+        return;
+      }
+
+      // /invite/<code> — invite deep link. Codes are 6 chars from a
+      // restricted alphabet (no 0/O/1/I/L); normalise to uppercase
+      // and accept any 4-12 char alphanumeric run so a copy-paste
+      // with stray hyphens or trailing whitespace still works.
+      var im = path.match(/^\/invite\/([A-Za-z0-9-]+)\/?$/i);
+      if (im) {
+        var code = im[1].replace(/-/g, '').toUpperCase();
+        var inviteSchemeUrl = 'differentworld://invite/' + code;
+        tryDeepLink(inviteSchemeUrl);
+        setTimeout(function () {
+          document.body.setAttribute('data-mode', 'invite');
+          document.getElementById('open-invite').href = inviteSchemeUrl;
+          document.getElementById('invite-meta-line').textContent =
+            'Code: ' + code;
         }, 700);
         return;
       }

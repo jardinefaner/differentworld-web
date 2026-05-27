@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Different World</title>
+  <!--
+    Universal fallback page served by GitHub Pages for any path that
+    doesn't match a real file. Two jobs:
+
+    1. /v/<id>/<kind> — vehicle deep links. Scanned QR codes encode
+       the HTTPS form (https://differentworld.app/v/<id>/<kind>) so
+       the OS camera opens the URL cleanly even when the custom
+       scheme isn't registered. This page reads the path, attempts
+       to open the custom scheme (differentworld://v/<id>/<kind>)
+       via window.location, and falls back to a "Open in app or
+       install" affordance if the app isn't installed.
+
+    2. Everything else — a plain "page not found" landing with a
+       link back to the marketing site.
+
+    No external scripts. Everything inlined so the page loads
+    instantly even on a phone with one bar of signal in a school
+    parking lot.
+  -->
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --fg: #1a1a1a;
+      --muted: #6b6b6b;
+      --accent: #2f6f5f;
+      --card: #ffffff;
+      --border: rgba(0,0,0,0.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181a;
+        --fg: #f3f3f3;
+        --muted: #9a9a9a;
+        --accent: #6fc7af;
+        --card: #1f2225;
+        --border: rgba(255,255,255,0.08);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter",
+        system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .card {
+      max-width: 520px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .glyph {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    p {
+      color: var(--muted);
+      margin: 8px 0;
+      font-size: 15px;
+    }
+    .btn {
+      display: inline-block;
+      margin: 18px 6px 0;
+      padding: 11px 18px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn.outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .meta {
+      margin-top: 22px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+      word-break: break-all;
+    }
+    /* Section toggle — JS swaps `data-mode` on <body> */
+    body[data-mode="loading"] .vehicle,
+    body[data-mode="loading"] .not-found { display: none; }
+    body[data-mode="vehicle"] .loading,
+    body[data-mode="vehicle"] .not-found { display: none; }
+    body[data-mode="not-found"] .loading,
+    body[data-mode="not-found"] .vehicle { display: none; }
+  </style>
+</head>
+<body data-mode="loading">
+  <div class="card loading">
+    <div class="glyph">⏳</div>
+    <h1>Opening Different World…</h1>
+    <p>Checking the link.</p>
+  </div>
+
+  <div class="card vehicle">
+    <div class="glyph">🚐</div>
+    <h1>Tap to open Different World</h1>
+    <p>
+      The QR you scanned is a vehicle check-in/out link. If the app is
+      installed on your phone, tap below to jump straight into it.
+    </p>
+    <p>
+      If nothing happens, the app isn't installed yet — ask your
+      program director for the download link.
+    </p>
+    <a id="open-app" class="btn" href="#">Open in app</a>
+    <a class="btn outline" href="/">Home</a>
+    <div class="meta" id="meta-line"></div>
+  </div>
+
+  <div class="card not-found">
+    <div class="glyph">🤷</div>
+    <h1>Page not found</h1>
+    <p>That URL doesn't match anything on the Different World site.</p>
+    <a class="btn" href="/">Back home</a>
+  </div>
+
+  <script>
+    (function () {
+      var path = window.location.pathname || '';
+      // Match `/v/<id>/<kind>` — the vehicle deep link path. Allow
+      // optional trailing slash. `<kind>` is whitelisted (checkout /
+      // checkin) so malformed inputs fall through to not-found.
+      var m = path.match(/^\/v\/([^\/]+)\/(checkout|checkin)\/?$/i);
+      if (m) {
+        var id = m[1];
+        var kind = m[2].toLowerCase();
+        var customSchemeUrl = 'differentworld://v/' + id + '/' + kind;
+        // Try the custom scheme. On iOS Safari this triggers a banner.
+        // On Android Chrome it opens the app (if installed) or shows a
+        // chooser. We don't *navigate* the page — we set a hidden
+        // iframe src so that if the app isn't installed, the parent
+        // page stays on screen with the fallback UI.
+        var iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = customSchemeUrl;
+        document.body.appendChild(iframe);
+
+        // After a short hop, reveal the "Tap to open" card so the
+        // user has an explicit way to retry. iOS in particular often
+        // suppresses the auto-redirect on first interaction.
+        setTimeout(function () {
+          document.body.setAttribute('data-mode', 'vehicle');
+          var anchor = document.getElementById('open-app');
+          anchor.href = customSchemeUrl;
+          document.getElementById('meta-line').textContent =
+            'Vehicle ' + id.slice(0, 8) + ' · ' + kind;
+        }, 700);
+        return;
+      }
+
+      document.body.setAttribute('data-mode', 'not-found');
+    })();
+  </script>
+</body>
+</html>

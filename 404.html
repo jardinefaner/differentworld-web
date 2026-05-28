@@ -181,10 +181,18 @@
         document.body.appendChild(iframe);
       }
 
+      // Wave 170 — accept both forms while we hop hosts:
+      //   - `/v/<id>/<kind>` (apex `differentworld.app` — when DNS
+      //     is wired correctly)
+      //   - `/differentworld-web/v/<id>/<kind>` (project-page URL
+      //     `jardinefaner.github.io/differentworld-web/...`,
+      //     used while DNS catches up)
       // /v/<id>/<kind> — vehicle deep link. `<kind>` is whitelisted
       // (checkout / checkin) so malformed inputs fall through to
       // not-found.
-      var vm = path.match(/^\/v\/([^\/]+)\/(checkout|checkin)\/?$/i);
+      var vm = path.match(
+        /^(?:\/differentworld-web)?\/v\/([^\/]+)\/(checkout|checkin)\/?$/i,
+      );
       if (vm) {
         var id = vm[1];
         var kind = vm[2].toLowerCase();
@@ -203,7 +211,9 @@
       // restricted alphabet (no 0/O/1/I/L); normalise to uppercase
       // and accept any 4-12 char alphanumeric run so a copy-paste
       // with stray hyphens or trailing whitespace still works.
-      var im = path.match(/^\/invite\/([A-Za-z0-9-]+)\/?$/i);
+      var im = path.match(
+        /^(?:\/differentworld-web)?\/invite\/([A-Za-z0-9-]+)\/?$/i,
+      );
       if (im) {
         var code = im[1].replace(/-/g, '').toUpperCase();
         var inviteSchemeUrl = 'differentworld://invite/' + code;
